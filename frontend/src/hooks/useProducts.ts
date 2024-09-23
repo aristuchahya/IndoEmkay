@@ -23,6 +23,7 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { showToast } from "@/components/ui/showtoast";
 import { useState } from "react";
 
+// Fetch all products
 export const useFetchProducts = () => {
   const { data, isSuccess, isLoading, isError } = useQuery<Product[]>({
     queryKey: ["products"],
@@ -32,6 +33,7 @@ export const useFetchProducts = () => {
   return { data, isSuccess, isLoading, isError };
 };
 
+//Delete Product
 export const useDeleteProduct = (): UseMutationResult<void, Error, number> => {
   const queryClient = useQueryClient();
   const dispatch = useDispatch();
@@ -43,6 +45,7 @@ export const useDeleteProduct = (): UseMutationResult<void, Error, number> => {
     onSuccess: (_, id) => {
       queryClient.invalidateQueries({ queryKey: ["products"] });
       dispatch(removeProduct(id));
+      showToast("Product deleted successfully", "success");
     },
     onError: (error) => {
       console.error("Error deleting product:", error);
@@ -50,6 +53,7 @@ export const useDeleteProduct = (): UseMutationResult<void, Error, number> => {
   });
 };
 
+// Add new Product
 export const useAddProduct = () => {
   const queryClient = useQueryClient();
   const dispatch = useDispatch();
@@ -87,10 +91,12 @@ export const useAddProduct = () => {
   return { register, handleSubmit, errors, onSubmit, open, setOpen };
 };
 
+// Update Product
 export const useUpdateProduct = () => {
   const queryClient = useQueryClient();
   const dispatch = useDispatch();
   const [open, setOpen] = useState<boolean>(false);
+  const [id, setId] = useState<number>(0);
 
   const {
     register,
@@ -99,16 +105,15 @@ export const useUpdateProduct = () => {
     formState: { errors },
   } = useForm<Product>({
     defaultValues: {
-      product_name: "",
-      category: "",
-      price: 0,
-      discount: 0,
+      id: id,
     },
     resolver: zodResolver(productSchema),
   });
 
   const mutation = useMutation<Product, Error, Product>({
     mutationFn: async (product: Product) => {
+      product.id = id;
+
       return await updateProduct(product);
     },
     onSuccess: (data) => {
@@ -124,14 +129,18 @@ export const useUpdateProduct = () => {
 
   const handleEdit = (product: Product) => {
     setValue("id", product.id);
+    setId(product.id);
     setValue("product_name", product.product_name);
     setValue("category", product.category);
     setValue("price", product.price);
     setValue("discount", product.discount);
+    setValue("created_at", product.created_at);
     setOpen(true);
   };
 
   const onSubmit: SubmitHandler<Product> = (data) => {
+    console.log("Data yang dikirim untuk update:", data);
+
     mutation.mutate(data);
   };
 

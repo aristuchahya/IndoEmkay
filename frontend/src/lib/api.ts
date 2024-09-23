@@ -6,12 +6,16 @@ export interface Product {
   category: string;
   price: number;
   discount: number;
+  created_at: string;
 }
 
 const apiUrl = import.meta.env.VITE_API_URL;
 
 const apiClient = axios.create({
   baseURL: apiUrl,
+  headers: {
+    "Content-Type": "application/json",
+  },
 });
 
 export const fetchProducts = async (): Promise<Product[]> => {

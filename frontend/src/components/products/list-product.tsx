@@ -1,6 +1,6 @@
 "use client";
 
-import { Ellipsis } from "lucide-react";
+import { Ellipsis, Search } from "lucide-react";
 
 import {
   Card,
@@ -31,7 +31,7 @@ import {
   useFetchProducts,
   useUpdateProduct,
 } from "@/hooks/useProducts";
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { setProducts } from "@/hooks/productSlice";
 
 import {
@@ -45,9 +45,11 @@ import {
 import { Button } from "../ui/button";
 import { Label } from "../ui/label";
 import { Input } from "../ui/input";
+import { format } from "date-fns";
 
 export function ListProduct() {
   const dispatch = useDispatch();
+  const [searchCategory, setSearchCategory] = useState("");
   const { data: products, isLoading, isError } = useFetchProducts();
   const deleteMutation = useDeleteProduct();
   const {
@@ -78,6 +80,12 @@ export function ListProduct() {
     deleteMutation.mutate(id);
   };
 
+  const filteredProducts = (products ?? []).filter((product) => {
+    return product.category
+      .toLowerCase()
+      .includes(searchCategory.toLowerCase());
+  });
+
   return (
     <div className="mt-6">
       <Card>
@@ -88,6 +96,16 @@ export function ListProduct() {
           </CardDescription>
         </CardHeader>
         <CardContent>
+          <div className="relative ml-auto flex-1 md:grow-0 left-[350px]">
+            <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
+            <Input
+              type="search"
+              placeholder="Search..."
+              value={searchCategory}
+              onChange={(e) => setSearchCategory(e.target.value)}
+              className="w-full rounded-lg bg-background pl-8 md:w-[200px] lg:w-[336px]"
+            />
+          </div>
           <Table>
             <TableHeader>
               <TableRow>
@@ -99,6 +117,9 @@ export function ListProduct() {
                 <TableHead className="hidden md:table-cell w-[100px] text-start">
                   Discount
                 </TableHead>
+                <TableHead className="hidden md:table-cell w-[100px] text-start">
+                  Created At
+                </TableHead>
 
                 <TableHead>
                   <span className="sr-only">Actions</span>
@@ -106,44 +127,54 @@ export function ListProduct() {
               </TableRow>
             </TableHeader>
             <TableBody>
-              {products?.map((product) => (
-                <TableRow key={product.id}>
-                  <TableCell className="font-medium text-start">
-                    {product.product_name}
-                  </TableCell>
-                  <TableCell className="text-start">
-                    {product.category}
-                  </TableCell>
-                  <TableCell className="hidden md:table-cell text-start">
-                    Rp.{product.price}
-                  </TableCell>
-                  <TableCell className="hidden md:table-cell text-start">
-                    {product.discount} %
-                  </TableCell>
+              {filteredProducts?.length > 0 ? (
+                filteredProducts?.map((product) => (
+                  <TableRow key={product.id}>
+                    <TableCell className="font-medium text-start">
+                      {product.product_name}
+                    </TableCell>
+                    <TableCell className="text-start">
+                      {product.category}
+                    </TableCell>
+                    <TableCell className="hidden md:table-cell text-start">
+                      Rp.{product.price}
+                    </TableCell>
+                    <TableCell className="hidden md:table-cell text-start">
+                      {product.discount} %
+                    </TableCell>
 
-                  <TableCell>
-                    <DropdownMenu>
-                      <DropdownMenuTrigger asChild>
-                        <div className="cursor-pointer ms-2">
-                          <Ellipsis className="h-4 w-4 text-black" />
-                        </div>
-                      </DropdownMenuTrigger>
-                      <DropdownMenuContent align="end">
-                        <DropdownMenuLabel>Actions</DropdownMenuLabel>
-                        <DropdownMenuItem onSelect={() => handleEdit(product)}>
-                          Edit
-                        </DropdownMenuItem>
+                    <TableCell className="hidden md:table-cell text-start">
+                      {format(new Date(product.created_at), "dd MMM yyyy")}
+                    </TableCell>
 
-                        <DropdownMenuItem
-                          onClick={() => handleDelete(product.id)}
-                        >
-                          Delete
-                        </DropdownMenuItem>
-                      </DropdownMenuContent>
-                    </DropdownMenu>
-                  </TableCell>
-                </TableRow>
-              ))}
+                    <TableCell>
+                      <DropdownMenu>
+                        <DropdownMenuTrigger asChild>
+                          <div className="cursor-pointer ms-2">
+                            <Ellipsis className="h-4 w-4 text-black" />
+                          </div>
+                        </DropdownMenuTrigger>
+                        <DropdownMenuContent align="end">
+                          <DropdownMenuLabel>Actions</DropdownMenuLabel>
+                          <DropdownMenuItem onClick={() => handleEdit(product)}>
+                            Edit
+                          </DropdownMenuItem>
+
+                          <DropdownMenuItem
+                            onClick={() => handleDelete(product.id)}
+                          >
+                            Delete
+                          </DropdownMenuItem>
+                        </DropdownMenuContent>
+                      </DropdownMenu>
+                    </TableCell>
+                  </TableRow>
+                ))
+              ) : (
+                <p className="text-center text-red-500 text-[20px]">
+                  No product found
+                </p>
+              )}
             </TableBody>
           </Table>
         </CardContent>
@@ -164,6 +195,7 @@ export function ListProduct() {
           </DialogHeader>
           <form onSubmit={handleSubmit(onSubmit)}>
             <div className="grid gap-4 py-4">
+              <input type="hidden" {...register("id")} />
               <div className="grid grid-cols-4 items-center gap-4">
                 <Label htmlFor="name" className="text-right">
                   Product Name

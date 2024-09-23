@@ -15,15 +15,28 @@ class ProductController extends Controller
     /**
      * Display a listing of the resource.
      */
-    public function index()
+    public function index(Request $request)
     {
-        $product = Product::get();
-        if ($product) {
-            return ProductResource::collection($product);
-        } else {
-            return response()->json(['message' => 'Data not found'], 404);
-        }
-        
+    
+    $category = $request->query('category');
+
+    
+    $query = Product::orderBy('created_at', 'DESC');
+
+    
+    if ($category) {
+        $query->where('category', 'LIKE', '%' . $category . '%');
+    }
+
+   
+    $products = $query->get();
+
+    
+    if ($products->isNotEmpty()) {
+        return ProductResource::collection($products);
+    } else {
+        return response()->json(['message' => 'Data not found'], 404);
+    }
     }
 
     /**

@@ -6,6 +6,7 @@ interface Product {
   category: string;
   price: number;
   discount: number;
+  created_at: string;
 }
 
 interface ProductState {
